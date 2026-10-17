@@ -1,0 +1,28 @@
+# Environment & Tokens
+.env
+*.token
+farmaoalah_token.txt
+
+# Session, Cache & State Databases
+*.pkl
+*.sqlite
+*.db
+stats.pkl
+states.pkl
+prefs.pkl
+
+# Logs & Temporary Files
+*.log
+*.tmp
+debug_*.png
+debug_*.jpg
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# Node Modules
+node_modules/
