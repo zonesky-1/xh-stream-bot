@@ -15,8 +15,9 @@ Platform bot Telegram multimedia & streaming serba-guna dengan integrasi 15+ pro
 * **China Media Stream:** `scraper_china.py`
 
 ### 2. Anime, Manga, & Adult Entertainment
-* **Manga / Manhwa / Doujin:** `scraper_nh.py`, `index_nh.py`, `scraper_hentai.py`
-* **JAV & Video Databases:** `scraper_javdb.py`, `scraper_nsfw.py`, `scraper_porntrex.py`, `scraper_candy.py`
+* **Manga / Manhwa / Doujin:** `scraper_nh.py`, `scraper_nhen.py`, `index_nh.py`, `scraper_hentai.py`
+* **JAV & Video Databases:** `scraper_javdb.py`, `scraper_nsfw.py`, `scraper_porntrex.py`, `scraper_candy.py`, `scraper_redgifs.py`, `scraper_erome.py`, `scraper_cam.py`
+* **Creators Content Aggregator:** `scraper_kemono.py` (`kemono_creators.json`), `scraper_coomer.py` (`coomer_creators.json`)
 * **Anime Discovery:** `scraper_kitsu.py`, `scraper_kdj.py`
 
 ### 3. AI & Stable Diffusion Engine

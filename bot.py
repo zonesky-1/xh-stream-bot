@@ -40,16 +40,28 @@ import scraper_kdj
 import scraper_nh
 import scraper_hentai
 import scraper_indo
+import scraper_nhen
+import scraper_coomer
+import scraper_redgifs
+import scraper_cam
+import scraper_kemono
+import scraper_erome
 
 BASE_DIR = Path(__file__).resolve().parent
 DL_DIR = BASE_DIR / "dl"
 LOG_FILE = BASE_DIR / "bot.log"
 
 WELCOME = (
-    "🔞 <b>xHamster Bot</b>\n\n"
-    "pilih menu di bawah — atau langsung ketik perintahnya:\n\n"
-    "🔍 <code>/cari &lt;judul&gt;</code> — cari apa aja\n"
-    "kalau tombol basi, /help lagi aja."
+    "🔞 <b>xHamster Bot — Ultimate Edition</b>\n\n"
+    "🔥 <b>Fitur Terbaru (Lendir Pack):</b>\n"
+    "• 🍑 <code>/of</code> — OnlyFans &amp; Fansly Leak Hub\n"
+    "• 🦊 <code>/km</code> — Kemono (Patreon/Fanbox Cosplayer)\n"
+    "• 📸 <code>/erome</code> — Album Selfie &amp; Video Amatir / Indo Leak\n"
+    "• 📹 <code>/cam</code> — Chaturbate Live Cam Streaming Cewek\n"
+    "• 📕 <code>/nh</code> — NHentai 6-Digit Doujin\n"
+    "• 🎬 <code>/rg</code> — Video Pendek RedGIFs Clips\n\n"
+    "🎬 <b>Fitur Lainnya:</b> <code>/film</code> · <code>/series</code> · <code>/manhwa</code> · <code>/jav</code> · <code>/cari</code>\n\n"
+    "<i>Pilih kategori di menu tombol bawah:</i>"
 )
 
 # menu tombol: key → (label, teks cara pakai)
@@ -156,13 +168,25 @@ MENU = {
             "<code>/gen [prompt]</code>\n"
             "contoh: <code>/gen catgirl maid solo</code>\n"
             "CPU ARM ~1-3 menit/gambar"),
-    "r34": ("🔞 Gambar Dewasa", 
+    "r34": ("🔞 Gambar Dewasa",
             "🔞 <b>Gambar Dewasa</b> (rule34/e621)\n\n"
             "<code>/r34</code> — random\n"
             "<code>/r34 [tag]</code> — spesifik\n"
             "tombol 🎲 = gambar lain\n"
             "contoh: <code>/r34 catgirl solo</code>\n\n"
             "tag anak-anak = DITOLAK"),
+    "dewasa": ("🔥 Lendir Pack",
+               "🔥 <b>Lendir Pack (Komplit)</b>\n\n"
+               "🍑 <code>/of</code> — OnlyFans &amp; Fansly Hub\n"
+               "  <code>/of acak</code> · <code>/of top</code> · <code>/of &lt;nama&gt;</code>\n\n"
+               "🦊 <code>/km</code> — Kemono Hub (Patreon/Fanbox/Fantia)\n"
+               "  <code>/km acak</code> · <code>/km top</code> · <code>/km &lt;nama&gt;</code>\n\n"
+               "📸 <code>/erome [kata]</code> — Album selfie &amp; leak amatir\n"
+               "  <code>/erome indo</code> · <code>/erome selfie</code> · <code>/eromerand</code>\n\n"
+               "📹 <code>/cam [tag]</code> — Chaturbate live cam cewek\n"
+               "  <code>/cam asian</code> · <code>/cam teen</code> · <code>/camrand</code>\n\n"
+               "📕 <code>/nh [6 digit]</code> — Doujin NHentai\n"
+               "🎬 <code>/rg [tag]</code> — Video pendek RedGIFs"),
     "hentai": ("😈 Hentai",
                "😈 <b>Hentai Video</b>\n\n"
                "<code>/hentai [judul]</code> — video hentai\n"
@@ -196,7 +220,12 @@ MENU = {
 
 def menu_kb() -> InlineKeyboardMarkup:
     """Keyboard menu utama — semua fitur kelihatan."""
-    rows = []
+    rows = [
+        [InlineKeyboardButton("🔥 Lendir Pack (OF / KM / Cam / Erome)", callback_data="mn|dewasa")],
+        [InlineKeyboardButton("🍑 OnlyFans", callback_data="ofnav|home"),
+         InlineKeyboardButton("📸 Erome", callback_data="eromerand"),
+         InlineKeyboardButton("📹 Live Cam", callback_data="camrand")],
+    ]
     order = [
         ["film", "series", "komik"],
         ["manhwa", "jav", "china"],
@@ -207,12 +236,22 @@ def menu_kb() -> InlineKeyboardMarkup:
     ]
     for row in order:
         rows.append([InlineKeyboardButton(MENU[k][0], callback_data=f"mn|{k}")
-                     for k in row])
+                     for k in row if k in MENU])
     return InlineKeyboardMarkup(rows)
 
 
 def menu_detail_kb(key: str) -> InlineKeyboardMarkup:
     """Detail satu menu + tombol kembali."""
+    if key == "dewasa":
+        return InlineKeyboardMarkup([
+            [InlineKeyboardButton("🍑 OnlyFans Hub", callback_data="ofnav|home"),
+             InlineKeyboardButton("🦊 Kemono Hub", callback_data="kmnav|home")],
+            [InlineKeyboardButton("📸 Erome Amatir", callback_data="eromerand"),
+             InlineKeyboardButton("📹 Live Cam Cewek", callback_data="camrand")],
+            [InlineKeyboardButton("📕 NHentai 6-Digit", callback_data="nhpop"),
+             InlineKeyboardButton("🎬 RedGIFs Acak", callback_data="rgl||")],
+            [InlineKeyboardButton("⬅️ Kembali ke Menu", callback_data="mn|back")]
+        ])
     return InlineKeyboardMarkup([[
         InlineKeyboardButton("⬅️ Menu", callback_data="mn|back"),
         InlineKeyboardButton(MENU[key][0], callback_data=f"mn|{key}"),
@@ -4830,6 +4869,1404 @@ async def _cleanup_dl_startup(app=None):
                  n, sz / 1048576)
 
 
+# ══════════════════ 🔥 DEWASA BARU — /nh /of /rg ══════════════════
+# /nh = NHentai 6-digit (scraper_nhen) — PLUG ke mesin reader manhwa
+#        (st["mod"]=scraper_nhen → Baca slide/10 halaman/ZIP gratis semua)
+# /of = bocoran OnlyFans (scraper_coomer) — media DILEMPAR ke server
+#        Telegram by URL (box gak bisa akses n*.cooomer.st, server TG bisa)
+# /rg = RedGIFs video/gif pendek acak (scraper_redgifs)
+# catatan: jangan tambah "httpx" utk kooper — kirim URL aja ke Bot API.
+
+STATES_OF: "OrderedDict[str, dict]" = OrderedDict()   # qid → {items, label, t}
+_RG_TAG: dict = {}                                    # qid? → tag aktif (via msg id)
+
+def new_of_state(items: list, label: str) -> str:
+    qid = uuid.uuid4().hex[:8]
+    STATES_OF[qid] = {"items": items, "label": label, "t": time.time()}
+    STATES_OF.move_to_end(qid)
+    while len(STATES_OF) > 60 or (
+            len(STATES_OF) > 1 and
+            time.time() - next(iter(STATES_OF.values()))["t"] > 6 * 3600):
+        STATES_OF.popitem(last=False)
+    return qid
+
+
+def _of_state(qid: str) -> dict | None:
+    st = STATES_OF.get(qid)
+    if st:
+        if time.time() - st["t"] > 6 * 3600:
+            STATES_OF.pop(qid, None)
+            return None
+        STATES_OF.move_to_end(qid)
+    return st
+
+
+def _clean_of_img(u: str) -> str:
+    if not u:
+        return u
+    if "coomer.st/data/" in u:
+        rel = u.split("coomer.st/data", 1)[1]
+        if not rel.lower().endswith(".mp4"):
+            return f"https://img.coomer.st/thumbnail/data{rel}"
+    return u
+
+
+OF_HOME_TEXT = (
+    "🍑 <b>OnlyFans / Coomer Hub</b>\n\n"
+    "Jelajah bocoran konten tanpa harus tahu username:\n\n"
+    "👑 <b>Top Kreator</b> — daftar 1.500 kreator hits (Belle Delphine, Hannah Owo, dll)\n"
+    "🔥 <b>Feed Populer</b> — 50 post terhangat hari ini\n"
+    "🎲 <b>Acak Kreator</b> — comot 1 kreator acak & buka postingannya\n"
+    "🎲 <b>Acak Post</b> — comot 1 post random\n\n"
+    "🔍 Atau ketik langsung: <code>/of &lt;nama|kata&gt;</code> (mis. <code>/of cosplay</code>)"
+)
+
+
+def of_home_kb() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔥 Feed Populer", callback_data="ofnav|pop"),
+         InlineKeyboardButton("🎲 Acak Kreator", callback_data="ofrand|c")],
+        [InlineKeyboardButton("👑 Top Kreator", callback_data="oftop|1"),
+         InlineKeyboardButton("🎲 Acak Post", callback_data="ofrand|p")],
+        [InlineKeyboardButton("⬅️ Menu Utama", callback_data="mn|back")]
+    ])
+
+
+def of_top_kb(page: int, total_pages: int, creators: list[dict]) -> InlineKeyboardMarkup:
+    rows = []
+    for i in range(0, len(creators), 2):
+        pair = creators[i:i + 2]
+        row = []
+        for c in pair:
+            fav = c.get("fav", 0)
+            fav_str = f"{fav // 1000}k" if fav >= 1000 else str(fav)
+            name_disp = c["name"][:13]
+            row.append(InlineKeyboardButton(f"{name_disp} ({fav_str})",
+                                            callback_data=f"ofc|{c['id']}|{c.get('svc', 'onlyfans')}"))
+        rows.append(row)
+    nav = []
+    if page > 1:
+        nav.append(InlineKeyboardButton("◀️", callback_data=f"oftop|{page - 1}"))
+    nav.append(InlineKeyboardButton(f"📄 {page}/{total_pages}", callback_data="noop|"))
+    if page < total_pages:
+        nav.append(InlineKeyboardButton("▶️", callback_data=f"oftop|{page + 1}"))
+    rows.append(nav)
+    rows.append([
+        InlineKeyboardButton("🎲 Acak Kreator", callback_data="ofrand|c"),
+        InlineKeyboardButton("🏠 Beranda OF", callback_data="ofnav|home")
+    ])
+    return InlineKeyboardMarkup(rows)
+
+
+def of_kb(qid: str, idx: int, it: dict) -> InlineKeyboardMarkup:
+    n = len(it.get("photos") or [])
+    nv = len(it.get("videos") or [])
+    nav = []
+    if idx > 1:
+        nav.append(InlineKeyboardButton("◀️", callback_data=f"of|{qid}|{idx - 1}"))
+    nav.append(InlineKeyboardButton(f"🍑 {idx}", callback_data="noop|"))
+    nav.append(InlineKeyboardButton("▶️", callback_data=f"of|{qid}|{idx + 1}"))
+    rows = [nav]
+    media_row = []
+    if n:
+        media_row.append(InlineKeyboardButton(f"📷 foto album ({n})",
+                                              callback_data=f"ofp|{qid}|{idx}"))
+    if nv:
+        media_row.append(InlineKeyboardButton("🎬 video MP4",
+                                            callback_data=f"ofv|{qid}|{idx}"))
+    if media_row:
+        rows.append(media_row)
+    rows.append([
+        InlineKeyboardButton("🎲 Kreator Lain", callback_data="ofrand|c"),
+        InlineKeyboardButton("🎲 Post Acak", callback_data="ofrand|p"),
+    ])
+    rows.append([
+        InlineKeyboardButton("🏠 Beranda OF", callback_data="ofnav|home"),
+        InlineKeyboardButton("🔗 sumber", url=it.get("url")
+                                          or scraper_coomer.SITE)
+    ])
+    return InlineKeyboardMarkup(rows)
+
+
+async def h_nh(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """NHentai 6-digit: /nh 177013 · /nh populer · /nh fate stay night"""
+    q = " ".join(context.args or []).strip()
+    msg = await update.message.reply_text("📕 nyari di NHentai...",
+                                          parse_mode=ParseMode.HTML)
+    try:
+        nh_detail = None
+        if re.fullmatch(r"\d{4,6}", q):
+            # kode 6 digit → validasi langsung + judul asli dari API
+            _u = f"{scraper_nhen.SITE}/g/{int(q)}/"
+            nh_detail = await scraper_nhen.gallery(_u)   # 404 → error di sini
+            gp = scraper_nhen.GalleryPage(
+                query=f"nhentai {q}", page=1, max_pages=1,
+                items=[scraper_nhen.Gallery(idx=1, title=nh_detail.title,
+                                            url=nh_detail.url,
+                                            cat=f"{nh_detail.pages} hal",
+                                            thumb=nh_detail.cover)])
+        elif q.lower() in ("populer", "popular", "hot"):
+            gp = await scraper_nhen.search("", 1)
+        elif q:
+            gp = await scraper_nhen.search(q, 1)
+        else:
+            await msg.edit_text(
+                "format: <code>/nh &lt;6 digit&gt;</code> · "
+                "<code>/nh populer</code> · <code>/nh &lt;judul&gt;</code>",
+                parse_mode=ParseMode.HTML)
+            return
+    except Exception as e:
+        log.exception("nhentai gagal")
+        await msg.edit_text(f"❌ gagal: {esc(str(e)[:200])}", parse_mode=ParseMode.HTML)
+        return
+    if not gp.items:
+        await msg.edit_text("❌ nggak ada hasil — coba kata kunci / kode lain",
+                            parse_mode=ParseMode.HTML)
+        return
+    qid = new_state_m(gp)
+    st = _state_m(qid)
+    if st is not None:
+        st["mod"] = scraper_nhen        # reader (slide/10hal/ZIP) → NHentai
+        if nh_detail is not None:       # udah ke-fetch pas validasi kode
+            st["details"][gp.items[0].url] = nh_detail
+    text, kb = render_mlist(gp, qid)
+    try:
+        await msg.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb)
+    except TelegramError as e:
+        log.warning("edit list nh gagal: %s", e)
+        return
+    # kartu preview galeri pertama (cover + tombol 📖/🖼/⬇️)
+    if gp.items:
+        try:
+            await m_detail(update=types.SimpleNamespace(
+                callback_query=types.SimpleNamespace(
+                    message=types.SimpleNamespace(chat=msg.chat,
+                                                  message_id=msg.message_id,
+                                                  reply_text=msg.reply_text,
+                                                  reply_photo=msg.reply_photo,
+                                                  reply_document=msg.reply_document),
+                    answer=lambda *a, **k: asyncio.sleep(0)),
+                effective_user=update.effective_user,
+                effective_chat=update.effective_chat), qid=qid, idx=1)
+        except Exception:
+            log.warning("preview nh detail gagal", exc_info=True)
+
+
+async def h_nh_pop_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    await q.answer("📕 narik NHentai populer...")
+    try:
+        gp = await scraper_nhen.search("", 1)
+        if not gp.items:
+            await q.message.reply_text("❌ hasil populer NHentai kosong")
+            return
+        qid = new_state_m(gp)
+        st = _state_m(qid)
+        if st is not None:
+            st["mod"] = scraper_nhen
+        text, kb = render_mlist(gp, qid)
+        await q.message.reply_text(text, parse_mode=ParseMode.HTML, reply_markup=kb)
+    except Exception as e:
+        await q.answer(f"❌ {str(e)[:40]}", show_alert=True)
+
+
+async def _render_of_post(target_msg, context, qid: str, idx: int, edit: bool = True) -> bool:
+    """Helper untuk render post OF (edit in-place atau kirim baru)."""
+    st = _of_state(qid)
+    if not st or not (1 <= idx <= len(st["items"])):
+        return False
+    it = st["items"][idx - 1]
+    lbl = st.get("label") or it.get("creator") or ""
+    cap = (f"🍑 <b>{esc(it['creator'])}</b> · {esc(it['service'])}\n"
+           f"{esc(it['title'][:150])}\n"
+           f"🗓 {esc(it['date'] or '-')} · 📷 {len(it.get('photos') or [])}"
+           f" · 🎬 {len(it.get('videos') or [])}\n"
+           f"🎞 {esc(lbl)} (post {idx}/{len(st['items'])})")
+    kb = of_kb(qid, idx, it)
+    media = (it.get("photos") or [None])[0]
+    media = _clean_of_img(media)
+
+    if edit:
+        try:
+            if media:
+                await context.bot.edit_message_media(
+                    chat_id=target_msg.chat.id, message_id=target_msg.message_id,
+                    media=InputMediaPhoto(media, caption=cap, parse_mode=ParseMode.HTML),
+                    reply_markup=kb)
+                return True
+            else:
+                try:
+                    await context.bot.edit_message_caption(
+                        chat_id=target_msg.chat.id, message_id=target_msg.message_id,
+                        caption=cap, parse_mode=ParseMode.HTML, reply_markup=kb)
+                    return True
+                except TelegramError:
+                    await target_msg.edit_text(cap, parse_mode=ParseMode.HTML, reply_markup=kb)
+                    return True
+        except TelegramError as e:
+            log.info("edit of post gagal (%s) → fallback kirim pesan baru", e)
+
+    # fallback kirim pesan baru
+    try:
+        if media:
+            await target_msg.reply_photo(photo=media, caption=cap,
+                                         parse_mode=ParseMode.HTML, reply_markup=kb)
+        else:
+            await target_msg.reply_text(cap, parse_mode=ParseMode.HTML, reply_markup=kb)
+        return True
+    except TelegramError as e2:
+        log.warning("kirim of post baru gagal: %s", e2)
+        return False
+
+
+async def h_of(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """/of [kreator|kata|acak|top|beranda] — OnlyFans hub & search."""
+    args = list(context.args or [])
+    if update.message and update.message.text and update.message.text.startswith("/ofrand"):
+        args = ["acak"]
+    q = " ".join(args).strip()
+
+    # 1. Tanpa argumen atau 'beranda' -> buka menu beranda
+    if not q or q.lower() in ("beranda", "home"):
+        await update.message.reply_text(OF_HOME_TEXT, parse_mode=ParseMode.HTML,
+                                        reply_markup=of_home_kb())
+        return
+
+    # 2. 'top' atau 'kreator' -> buka daftar top kreator
+    if q.lower() in ("top", "kreator", "creators"):
+        clist, total_p = scraper_coomer.top_creators(1, 8)
+        text = (f"👑 <b>Top Kreator Hits OnlyFans &amp; Fansly</b>\n"
+                f"Halaman <b>1</b> dari {total_p} (favorit terbanyak)\n\n"
+                "Pilih kreator untuk buka postingan &amp; albumnya:")
+        await update.message.reply_text(text, parse_mode=ParseMode.HTML,
+                                        reply_markup=of_top_kb(1, total_p, clist))
+        return
+
+    # 3. Resolve (acak / nama kreator / search q=)
+    lbl = "🎲 acak kreator..." if q.lower() in ("acak", "random", "rand", "kocok") else f"🍑 ngambil {esc(q[:60])}..."
+    msg = await update.message.reply_text(lbl, parse_mode=ParseMode.HTML)
+    try:
+        items, label = await asyncio.to_thread(scraper_coomer.resolve, q)
+    except Exception as e:
+        log.exception("coomer resolve gagal")
+        await msg.edit_text(f"❌ {esc(str(e)[:200])}", parse_mode=ParseMode.HTML)
+        return
+    if not items:
+        await msg.edit_text("❌ nggak ada hasil — coba kata kunci lain",
+                            parse_mode=ParseMode.HTML)
+        return
+    qid = new_of_state(items, label)
+    ok = await _render_of_post(msg, context, qid, 1, edit=True)
+    if not ok:
+        await msg.edit_text("❌ gagal menampilkan post", parse_mode=ParseMode.HTML)
+
+
+async def h_of_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """of|qid|idx — navigasi kartu hasil /of."""
+    q = update.callback_query
+    _, qid, idx_s = (q.data.split("|") + ["", "", ""])[:3]
+    st = _of_state(qid)
+    if not st:
+        await q.answer("hasil sudah basi — /of lagi", show_alert=True)
+        return
+    idx = int(idx_s or 1)
+    if not (1 <= idx <= len(st["items"])):
+        await q.answer("udah di ujung ✌️")
+        return
+    ok = await _render_of_post(q.message, context, qid, idx, edit=True)
+    if ok:
+        await q.answer()
+    else:
+        await q.answer("❌ gagal memuat post", show_alert=True)
+
+
+async def h_of_nav_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Callback navigasi beranda, top kreator, dan random OF."""
+    q = update.callback_query
+    data = q.data or ""
+    parts = data.split("|")
+    act = parts[0]
+
+    if act == "ofnav":
+        sub = parts[1] if len(parts) > 1 else "home"
+        if sub == "home":
+            await q.answer()
+            try:
+                await q.message.edit_text(OF_HOME_TEXT, parse_mode=ParseMode.HTML,
+                                          reply_markup=of_home_kb())
+            except TelegramError:
+                await q.message.reply_text(OF_HOME_TEXT, parse_mode=ParseMode.HTML,
+                                           reply_markup=of_home_kb())
+        elif sub == "pop":
+            await q.answer("⏳ memuat feed populer...")
+            try:
+                items = await asyncio.to_thread(scraper_coomer.popular)
+                if not items:
+                    await q.message.reply_text("❌ feed populer kosong")
+                    return
+                qid = new_of_state(items, "🔥 populer hari ini")
+                ok = await _render_of_post(q.message, context, qid, 1, edit=True)
+                if not ok:
+                    await _render_of_post(q.message, context, qid, 1, edit=False)
+            except Exception as e:
+                log.exception("popular gagal")
+                await q.message.reply_text(f"❌ gagal: {esc(str(e)[:120])}")
+
+    elif act == "oftop":
+        page = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 1
+        await q.answer()
+        clist, total_p = scraper_coomer.top_creators(page, 8)
+        text = (f"👑 <b>Top Kreator Hits OnlyFans &amp; Fansly</b>\n"
+                f"Halaman <b>{page}</b> dari {total_p} (favorit terbanyak)\n\n"
+                "Pilih kreator untuk buka postingan &amp; albumnya:")
+        kb = of_top_kb(page, total_p, clist)
+        try:
+            await q.message.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb)
+        except TelegramError:
+            await q.message.reply_text(text, parse_mode=ParseMode.HTML, reply_markup=kb)
+
+    elif act == "ofc":
+        cid = parts[1] if len(parts) > 1 else ""
+        svc = parts[2] if len(parts) > 2 else "onlyfans"
+        await q.answer(f"⏳ memuat @{cid}...")
+        try:
+            items = await asyncio.to_thread(scraper_coomer.creator_posts, cid, svc, 0, 30)
+            if not items:
+                await q.message.reply_text(f"❌ post @{cid} kosong / belum ada media")
+                return
+            label = f"👑 {cid} · {svc}"
+            qid = new_of_state(items, label)
+            ok = await _render_of_post(q.message, context, qid, 1, edit=True)
+            if not ok:
+                await _render_of_post(q.message, context, qid, 1, edit=False)
+        except Exception as e:
+            log.exception("kreator posts gagal")
+            await q.message.reply_text(f"❌ gagal: {esc(str(e)[:120])}")
+
+    elif act == "ofrand":
+        sub = parts[1] if len(parts) > 1 else "c"
+        if sub == "c":
+            await q.answer("🎲 mengacak kreator...")
+            try:
+                items, label = await asyncio.to_thread(scraper_coomer.random_creator_posts)
+                qid = new_of_state(items, label)
+                ok = await _render_of_post(q.message, context, qid, 1, edit=True)
+                if not ok:
+                    await _render_of_post(q.message, context, qid, 1, edit=False)
+            except Exception as e:
+                log.exception("random creator gagal")
+                await q.message.reply_text(f"❌ gagal: {esc(str(e)[:120])}")
+        elif sub == "p":
+            await q.answer("🎲 comot post acak...")
+            try:
+                items, label = await asyncio.to_thread(scraper_coomer.random_post)
+                qid = new_of_state(items, label)
+                ok = await _render_of_post(q.message, context, qid, 1, edit=True)
+                if not ok:
+                    await _render_of_post(q.message, context, qid, 1, edit=False)
+            except Exception as e:
+                log.exception("random post gagal")
+                await q.message.reply_text(f"❌ gagal: {esc(str(e)[:120])}")
+
+
+async def h_of_cb_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """ofp|qid|idx — kirim semua foto album (≤9, media_group by URL)."""
+    q = update.callback_query
+    _, qid, idx_s = (q.data.split("|") + ["", "", ""])[:3]
+    st = _of_state(qid)
+    if not st:
+        await q.answer("hasil sudah basi — /of lagi", show_alert=True)
+        return
+    it = st["items"][int(idx_s or 1) - 1]
+    photos = [_clean_of_img(u) for u in (it.get("photos") or [])[:9]]
+    if not photos:
+        await q.answer("post ini gak ada foto 😅", show_alert=True)
+        return
+    await q.answer("📷 ngirim album...")
+    cap = (f"🍑 <b>{esc(it['creator'])}</b> — {esc(it['title'][:100])}")
+    try:
+        if len(photos) == 1:
+            await context.bot.send_photo(chat_id=q.message.chat.id,
+                                         photo=photos[0], caption=cap,
+                                         parse_mode=ParseMode.HTML)
+        else:
+            await context.bot.send_media_group(
+                chat_id=q.message.chat.id,
+                media=[InputMediaPhoto(u) for u in photos])
+            if cap:
+                await context.bot.send_message(chat_id=q.message.chat.id,
+                                               text=cap, parse_mode=ParseMode.HTML)
+    except TelegramError as e:
+        log.warning("of album url gagal (%s) → coba download lokal", e)
+        try:
+            import io
+            buf_media = []
+            for u in photos:
+                resp = await asyncio.to_thread(scraper_coomer._session().get, u, timeout=15)
+                if resp.status_code == 200:
+                    buf_media.append(InputMediaPhoto(io.BytesIO(resp.content)))
+            if buf_media:
+                if len(buf_media) == 1:
+                    await context.bot.send_photo(chat_id=q.message.chat.id,
+                                                 photo=buf_media[0].media,
+                                                 caption=cap, parse_mode=ParseMode.HTML)
+                else:
+                    await context.bot.send_media_group(chat_id=q.message.chat.id, media=buf_media)
+                    if cap:
+                        await context.bot.send_message(chat_id=q.message.chat.id, text=cap, parse_mode=ParseMode.HTML)
+                return
+        except Exception as e2:
+            log.warning("of album lokal gagal: %s", e2)
+        try:
+            await context.bot.send_message(chat_id=q.message.chat.id,
+                                           text=f"❌ album gagal: {esc(str(e)[:120])}",
+                                           parse_mode=ParseMode.HTML)
+        except TelegramError:
+            pass
+
+
+async def h_of_cb_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """ofv|qid|idx — kirim video MP4 post (by URL, server TG yang ambil)."""
+    q = update.callback_query
+    _, qid, idx_s = (q.data.split("|") + ["", "", ""])[:3]
+    st = _of_state(qid)
+    if not st:
+        await q.answer("hasil sudah basi — /of lagi", show_alert=True)
+        return
+    it = st["items"][int(idx_s or 1) - 1]
+    vids = it.get("videos") or []
+    if not vids:
+        await q.answer("post ini gak ada video 😅", show_alert=True)
+        return
+    await q.answer("🎬 memproses video...")
+    cap = (f"🎬 <b>{esc(it['creator'])}</b> — {esc(it['title'][:100])}")
+    try:
+        await _send_retry(lambda: context.bot.send_video(
+            chat_id=q.message.chat.id, video=vids[0], caption=cap,
+            parse_mode=ParseMode.HTML, supports_streaming=True,
+            read_timeout=MEDIA_TIMEOUT, write_timeout=MEDIA_TIMEOUT))
+    except TelegramError as e:
+        log.warning("of video gagal: %s", e)
+        vid_url = vids[0]
+        post_url = it.get("url") or scraper_coomer.SITE
+        kb_fail = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🎬 Tonton / Download Video", url=vid_url)],
+            [InlineKeyboardButton("🌐 Buka Post di Web", url=post_url)]
+        ])
+        msg_fail = (
+            f"⚠️ <b>Video gak bisa dikirim langsung ke chat</b>\n\n"
+            f"👤 <b>{esc(it['creator'])}</b> · {esc(it.get('service', 'onlyfans'))}\n"
+            f"📝 {esc(it['title'][:100])}\n\n"
+            "💡 <b>Penyebab:</b> Telegram membatasi ukuran video lewat link bot (maks <b>20 MB</b>). "
+            "Video OnlyFans ini ukurannya lebih dari 20 MB sehingga server Telegram menolak menariknya ke dalam chat.\n\n"
+            "👉 <b>Solusi:</b> Klik tombol di bawah untuk <b>langsung nonton / download</b> di browser:"
+        )
+        try:
+            await context.bot.send_message(chat_id=q.message.chat.id,
+                                           text=msg_fail,
+                                           parse_mode=ParseMode.HTML,
+                                           reply_markup=kb_fail)
+        except TelegramError:
+            pass
+
+
+def _rg_kb(tag: str, gid: str) -> InlineKeyboardMarkup:
+    rows = [[InlineKeyboardButton("🎲 lainnya",
+                                  callback_data=f"rgl|{gid}|{tag}")]]
+    rows.append([InlineKeyboardButton("🔗 sumber",
+                                      url=f"{scraper_redgifs.SITE}/watch/{gid}")])
+    return InlineKeyboardMarkup(rows)
+
+
+def _rg_cap(g: dict) -> str:
+    tags = ", ".join((g.get("tags") or [])[:5])
+    return (f"🎬 <b>{esc((g.get('title') or 'clip')[:120])}</b>\n"
+            f"⏱ {g.get('dur') or '?'}s · {g.get('w') or '?'}x{g.get('h') or '?'}"
+            + (f"\n🏷 {esc(tags)}" if tags else ""))
+
+
+async def _rg_send(context, chat_id: int, g: dict, reply_to: int | None = None):
+    """Kirim 1 gif/clip redgifs. URL dulu (mp4 udah faststart), fallback lokal."""
+    vid = g.get("video") or ""
+    if not vid:
+        raise RuntimeError("gif gak punya video url")
+    try:
+        return await _send_retry(lambda: context.bot.send_video(
+            chat_id=chat_id, video=vid, caption=_rg_cap(g),
+            parse_mode=ParseMode.HTML, supports_streaming=True,
+            read_timeout=MEDIA_TIMEOUT, write_timeout=MEDIA_TIMEOUT,
+            reply_to_message_id=reply_to))
+    except BadRequest:
+        # fallback: download lokal lalu upload (gif tipikal <3MB, aman)
+        out = os.path.join(str(DL_DIR), f"rg-{uuid.uuid4().hex[:8]}.mp4")
+        try:
+            await asyncio.to_thread(scraper_redgifs.download, vid, out)
+            return await _send_retry(lambda: context.bot.send_video(
+                chat_id=chat_id, video=open(out, "rb"), caption=_rg_cap(g),
+                parse_mode=ParseMode.HTML, supports_streaming=True,
+                read_timeout=MEDIA_TIMEOUT, write_timeout=MEDIA_TIMEOUT,
+                reply_to_message_id=reply_to))
+        finally:
+            try:
+                os.remove(out)
+            except OSError:
+                pass
+
+
+async def h_rg(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """/rg [tag] — video/gif pendek RedGIFs acak."""
+    tag = " ".join(context.args or []).strip().lower().replace(" ", "-")
+    msg = await update.message.reply_text("🎲 nyari clip acak...",
+                                          parse_mode=ParseMode.HTML)
+    try:
+        g = await asyncio.to_thread(scraper_redgifs.random_gif, tag)
+    except Exception as e:
+        log.exception("redgifs random gagal")
+        await msg.edit_text(f"❌ {esc(str(e)[:160])}", parse_mode=ParseMode.HTML)
+        return
+    try:
+        await _rg_send(context, msg.chat.id, g, reply_to=update.message.message_id)
+        await msg.delete()
+    except Exception as e:
+        log.warning("rg kirim gagal: %s", e)
+        try:
+            await msg.edit_text(f"❌ clip gagal dikirim: {esc(str(e)[:120])}",
+                                parse_mode=ParseMode.HTML)
+        except TelegramError:
+            pass
+        return
+    try:
+        await context.bot.send_message(
+            chat_id=msg.chat.id, text=f"tag: <code>{esc(tag or g.get('seed_tag') or 'campur')}</code>",
+            parse_mode=ParseMode.HTML, reply_markup=_rg_kb(tag, g["id"]))
+    except TelegramError:
+        pass
+
+
+async def h_rg_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """rgl|<prev_id>|<tag> — 🎲 clip redgifs lain."""
+    q = update.callback_query
+    parts = q.data.split("|")
+    prev_id = parts[1] if len(parts) > 1 else ""
+    tag = parts[2] if len(parts) > 2 else ""
+    await q.answer("🎲 ...")
+    try:
+        g = await asyncio.to_thread(scraper_redgifs.next_gif, prev_id, tag)
+    except Exception as e:
+        log.exception("redgifs next gagal")
+        try:
+            await q.message.reply_text(f"❌ {esc(str(e)[:120])}", parse_mode=ParseMode.HTML)
+        except TelegramError:
+            pass
+        return
+    try:
+        await _rg_send(context, q.message.chat.id, g, reply_to=q.message.message_id)
+    except Exception as e:
+        log.warning("rg kirim lagi gagal: %s", e)
+        return
+    try:
+        await context.bot.send_message(
+            chat_id=q.message.chat.id,
+            text=f"tag: <code>{esc(tag or g.get('seed_tag') or 'campur')}</code>",
+            parse_mode=ParseMode.HTML, reply_markup=_rg_kb(tag, g["id"]))
+    except TelegramError:
+        pass
+
+
+async def h_rgtag(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """/rgtag [q] — daftar tag / saran tag redgifs."""
+    q = " ".join(context.args or []).strip()
+    try:
+        if q:
+            sug = await asyncio.to_thread(scraper_redgifs.suggest, q)
+            if not sug:
+                await update.message.reply_text(f"❌ saran utk '{esc(q)}' kosong")
+                return
+            lines = [f"🏷 saran utk <b>{esc(q)}</b>:"]
+            lines += [f"  <code>{esc(s['text'])}</code> ({s['kind']})"
+                      for s in sug]
+            lines.append("\npakai: <code>/rg &lt;tag&gt;</code>")
+        else:
+            ns = await asyncio.to_thread(scraper_redgifs.niches, 1)
+            pool = list(scraper_redgifs.DEFAULT_TAGS)
+            pool += [n["id"] for n in ns if n.get("id")][:20]
+            lines = ["🏷 tag populer (pakai: <code>/rg &lt;tag&gt;</code>):\n"]
+            for i in range(0, len(pool), 4):
+                lines.append("  " + " · ".join(f"<code>{esc(t)}</code>"
+                                               for t in pool[i:i + 4]))
+        await update.message.reply_text("\n".join(lines),
+                                        parse_mode=ParseMode.HTML)
+    except Exception as e:
+        await update.message.reply_text(f"❌ {esc(str(e)[:120])}",
+                                        parse_mode=ParseMode.HTML)
+
+
+# ── KEMONO (Patreon / Fanbox / Fantia) ──────────────────────────────────────
+STATES_KM: "OrderedDict[str, dict]" = OrderedDict()
+
+def new_km_state(items: list, label: str) -> str:
+    qid = uuid.uuid4().hex[:8]
+    STATES_KM[qid] = {"items": items, "label": label, "t": time.time()}
+    STATES_KM.move_to_end(qid)
+    while len(STATES_KM) > 60 or (
+            len(STATES_KM) > 1 and
+            time.time() - next(iter(STATES_KM.values()))["t"] > 6 * 3600):
+        STATES_KM.popitem(last=False)
+    return qid
+
+def _km_state(qid: str) -> dict | None:
+    st = STATES_KM.get(qid)
+    if st:
+        if time.time() - st["t"] > 6 * 3600:
+            STATES_KM.pop(qid, None)
+            return None
+        STATES_KM.move_to_end(qid)
+    return st
+
+def _clean_km_img(u: str) -> str:
+    if not u:
+        return u
+    if "kemono.cr/data/" in u:
+        rel = u.split("kemono.cr/data", 1)[1]
+        if not rel.lower().endswith(".mp4"):
+            return f"https://img.kemono.cr/thumbnail/data{rel}"
+    return u
+
+KM_HOME_TEXT = (
+    "🦊 <b>Kemono Hub (Cosplay, E-Girl, Patreon & Fanbox)</b>\n\n"
+    "Sarang bocoran set foto eksklusif dari <b>Patreon, Pixiv Fanbox, Fantia, "
+    "Candfans, Subscribestar</b>.\n\n"
+    "Pilih menu di bawah:\n"
+    "• 🔥 <b>Feed Populer</b> — 50 post terpopuler hari ini\n"
+    "• 👑 <b>Top Kreator</b> — 1.500 cosplayer & kreator terfavorit\n"
+    "• 🎲 <b>Acak Kreator</b> — langsung comot 1 kreator acak\n"
+    "• 🎲 <b>Acak Post</b> — comot 1 postingan random\n\n"
+    "<i>Atau ketik langsung:</i> <code>/km [nama]</code> (mis. <code>/km derpixon</code>)"
+)
+
+def km_home_kb() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔥 Feed Populer", callback_data="kmnav|pop"),
+         InlineKeyboardButton("👑 Top Kreator", callback_data="kmtop|1")],
+        [InlineKeyboardButton("🎲 Acak Kreator", callback_data="kmrand|c"),
+         InlineKeyboardButton("🎲 Acak Post", callback_data="kmrand|p")],
+        [InlineKeyboardButton("🏠 Menu Utama", callback_data="menu|dewasa")]
+    ])
+
+def km_top_kb(page: int, total_pages: int, creators: list[dict]) -> InlineKeyboardMarkup:
+    rows = []
+    r_cur = []
+    for c in creators:
+        nm = c.get("name") or c.get("id")
+        btn = InlineKeyboardButton(f"👤 {nm[:13]}", callback_data=f"kmc|{c['id']}|{c.get('svc','patreon')}")
+        r_cur.append(btn)
+        if len(r_cur) == 2:
+            rows.append(r_cur)
+            r_cur = []
+    if r_cur:
+        rows.append(r_cur)
+
+    nav = []
+    if page > 1:
+        nav.append(InlineKeyboardButton("◀️ Prev", callback_data=f"kmtop|{page - 1}"))
+    nav.append(InlineKeyboardButton(f"📄 {page}/{total_pages}", callback_data=f"kmtop|{page}"))
+    if page < total_pages:
+        nav.append(InlineKeyboardButton("Next ▶️", callback_data=f"kmtop|{page + 1}"))
+    rows.append(nav)
+    rows.append([InlineKeyboardButton("🎲 Acak Kreator", callback_data="kmrand|c"),
+                 InlineKeyboardButton("🏠 Beranda KM", callback_data="kmnav|home")])
+    return InlineKeyboardMarkup(rows)
+
+def km_kb(qid: str, idx: int, it: dict) -> InlineKeyboardMarkup:
+    np = len(it.get("photos") or [])
+    nv = len(it.get("videos") or [])
+    st = _km_state(qid)
+    total = len(st["items"]) if st else idx
+
+    rows = []
+    media_row = []
+    if np > 1:
+        media_row.append(InlineKeyboardButton(f"📷 foto album ({min(np, 9)})",
+                                            callback_data=f"kmp|{qid}|{idx}"))
+    if nv:
+        media_row.append(InlineKeyboardButton("🎬 video MP4",
+                                            callback_data=f"kmv|{qid}|{idx}"))
+    if media_row:
+        rows.append(media_row)
+
+    nav = []
+    if idx > 1:
+        nav.append(InlineKeyboardButton("◀️", callback_data=f"km|{qid}|{idx - 1}"))
+    nav.append(InlineKeyboardButton(f"{idx}/{total}", callback_data="noop"))
+    if idx < total:
+        nav.append(InlineKeyboardButton("▶️", callback_data=f"km|{qid}|{idx + 1}"))
+    rows.append(nav)
+
+    rows.append([
+        InlineKeyboardButton("🎲 Kreator Lain", callback_data="kmrand|c"),
+        InlineKeyboardButton("🎲 Post Acak", callback_data="kmrand|p"),
+    ])
+    rows.append([
+        InlineKeyboardButton("🏠 Beranda KM", callback_data="kmnav|home"),
+        InlineKeyboardButton("🌐 Web Post", url=it.get("url") or scraper_kemono.SITE),
+    ])
+    return InlineKeyboardMarkup(rows)
+
+async def _render_km_post(target_msg, context, qid: str, idx: int, edit: bool = True) -> bool:
+    st = _km_state(qid)
+    if not st or not (1 <= idx <= len(st["items"])):
+        return False
+    it = st["items"][idx - 1]
+    lbl = st.get("label") or it.get("creator") or ""
+    cap = (f"🦊 <b>{esc(it['creator'])}</b> · {esc(it['service'])}\n"
+           f"{esc(it['title'][:150])}\n"
+           f"🗓 {esc(it['date'] or '-')} · 📷 {len(it.get('photos') or [])}"
+           f" · 🎬 {len(it.get('videos') or [])}\n"
+           f"🎞 {esc(lbl)} (post {idx}/{len(st['items'])})")
+    kb = km_kb(qid, idx, it)
+    media = (it.get("photos") or [None])[0]
+    media = _clean_km_img(media)
+
+    if edit:
+        try:
+            if media:
+                await context.bot.edit_message_media(
+                    chat_id=target_msg.chat.id, message_id=target_msg.message_id,
+                    media=InputMediaPhoto(media, caption=cap, parse_mode=ParseMode.HTML),
+                    reply_markup=kb)
+                return True
+            else:
+                try:
+                    await context.bot.edit_message_caption(
+                        chat_id=target_msg.chat.id, message_id=target_msg.message_id,
+                        caption=cap, parse_mode=ParseMode.HTML, reply_markup=kb)
+                    return True
+                except TelegramError:
+                    await target_msg.edit_text(cap, parse_mode=ParseMode.HTML, reply_markup=kb)
+                    return True
+        except TelegramError as e:
+            log.info("edit km post gagal (%s) → fallback kirim pesan baru", e)
+
+    try:
+        if media:
+            await target_msg.reply_photo(photo=media, caption=cap,
+                                         parse_mode=ParseMode.HTML, reply_markup=kb)
+        else:
+            await target_msg.reply_text(cap, parse_mode=ParseMode.HTML, reply_markup=kb)
+        return True
+    except TelegramError as e2:
+        log.warning("kirim km post baru gagal: %s", e2)
+        return False
+
+async def h_km(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    args = list(context.args or [])
+    if update.message and update.message.text and update.message.text.startswith("/kmrand"):
+        args = ["acak"]
+    q = " ".join(args).strip()
+
+    if not q or q.lower() in ("beranda", "home"):
+        await update.message.reply_text(KM_HOME_TEXT, parse_mode=ParseMode.HTML,
+                                        reply_markup=km_home_kb())
+        return
+
+    if q.lower() == "top":
+        creators, total_p = await asyncio.to_thread(scraper_kemono.top_creators, 1, 8)
+        kb = km_top_kb(1, total_p, creators)
+        txt = (
+            "👑 <b>Top 1.500 Kreator & Cosplayer Terfavorit</b>\n"
+            "<i>(Patreon / Fanbox / Fantia)</i>\n\n"
+            "Pilih salah satu kreator untuk langsung buka postingannya:"
+        )
+        await update.message.reply_text(txt, parse_mode=ParseMode.HTML, reply_markup=kb)
+        return
+
+    lbl = esc(q[:30]) if q else "populer"
+    msg = await update.message.reply_text(f"🦊 nyari Kemono <b>{lbl}</b>...",
+                                          parse_mode=ParseMode.HTML)
+    try:
+        items, resolved_label = await asyncio.to_thread(scraper_kemono.resolve, q)
+    except Exception as e:
+        log.exception("kemono resolve gagal")
+        await msg.edit_text(f"❌ {esc(str(e)[:160])}", parse_mode=ParseMode.HTML)
+        return
+
+    if not items:
+        await msg.edit_text(f"❌ gak ada postingan media utk <b>{lbl}</b>",
+                            parse_mode=ParseMode.HTML)
+        return
+
+    qid = new_km_state(items, resolved_label)
+    ok = await _render_km_post(msg, context, qid, 1, edit=False)
+    if ok:
+        try:
+            await msg.delete()
+        except TelegramError:
+            pass
+
+async def h_km_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    _, qid, idx_s = (q.data.split("|") + ["", "", ""])[:3]
+    st = _km_state(qid)
+    if not st:
+        await q.answer("hasil sudah basi — /km lagi", show_alert=True)
+        return
+    idx = int(idx_s or 1)
+    if not (1 <= idx <= len(st["items"])):
+        await q.answer("udah di ujung ✌️")
+        return
+    await q.answer()
+    await _render_km_post(q.message, context, qid, idx, edit=True)
+
+async def h_km_nav_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    data = q.data or ""
+    parts = data.split("|")
+    act = parts[0]
+
+    if act == "kmnav":
+        sub = parts[1] if len(parts) > 1 else "home"
+        if sub == "home":
+            await q.answer()
+            try:
+                await q.message.edit_text(KM_HOME_TEXT, parse_mode=ParseMode.HTML,
+                                          reply_markup=km_home_kb())
+            except TelegramError:
+                await q.message.reply_text(KM_HOME_TEXT, parse_mode=ParseMode.HTML,
+                                           reply_markup=km_home_kb())
+        elif sub == "pop":
+            await q.answer("🔥 narik feed populer...")
+            try:
+                items = await asyncio.to_thread(scraper_kemono.popular)
+                if not items:
+                    await q.answer("feed populer kosong", show_alert=True)
+                    return
+                qid = new_km_state(items, "🔥 populer hari ini")
+                await _render_km_post(q.message, context, qid, 1, edit=False)
+            except Exception as e:
+                await q.answer(f"❌ {str(e)[:40]}", show_alert=True)
+
+    elif act == "kmtop":
+        page = int(parts[1]) if len(parts) > 1 else 1
+        await q.answer()
+        creators, total_p = await asyncio.to_thread(scraper_kemono.top_creators, page, 8)
+        kb = km_top_kb(page, total_p, creators)
+        txt = (
+            "👑 <b>Top 1.500 Kreator & Cosplayer Terfavorit</b>\n"
+            "<i>(Patreon / Fanbox / Fantia)</i>\n\n"
+            "Pilih salah satu kreator untuk langsung buka postingannya:"
+        )
+        try:
+            await q.message.edit_text(txt, parse_mode=ParseMode.HTML, reply_markup=kb)
+        except TelegramError:
+            await q.message.reply_text(txt, parse_mode=ParseMode.HTML, reply_markup=kb)
+
+    elif act == "kmc":
+        cid = parts[1] if len(parts) > 1 else ""
+        svc = parts[2] if len(parts) > 2 else "patreon"
+        await q.answer("membuka kreator...")
+        try:
+            items = await asyncio.to_thread(scraper_kemono.creator_posts, cid, svc)
+            if not items:
+                await q.answer("kreator ini belum ada post media", show_alert=True)
+                return
+            c_list = scraper_kemono.get_creators()
+            matched = [c["name"] for c in c_list if c["id"] == cid]
+            name = matched[0] if matched else cid
+            for it in items:
+                it["creator"] = name
+            qid = new_km_state(items, f"👑 {name} · {svc}")
+            await _render_km_post(q.message, context, qid, 1, edit=False)
+        except Exception as e:
+            await q.answer(f"❌ {str(e)[:40]}", show_alert=True)
+
+    elif act == "kmrand":
+        sub = parts[1] if len(parts) > 1 else "c"
+        if sub == "c":
+            await q.answer("🎲 mengacak kreator...")
+            try:
+                items, lbl = await asyncio.to_thread(scraper_kemono.random_creator_posts)
+                if not items:
+                    await q.answer("gagal acak kreator", show_alert=True)
+                    return
+                qid = new_km_state(items, lbl)
+                await _render_km_post(q.message, context, qid, 1, edit=True)
+            except Exception as e:
+                await q.answer(f"❌ {str(e)[:40]}", show_alert=True)
+        else:
+            await q.answer("🎲 mengacak post...")
+            try:
+                items, lbl = await asyncio.to_thread(scraper_kemono.random_post)
+                if not items:
+                    await q.answer("gagal acak post", show_alert=True)
+                    return
+                qid = new_km_state(items, lbl)
+                await _render_km_post(q.message, context, qid, 1, edit=True)
+            except Exception as e:
+                await q.answer(f"❌ {str(e)[:40]}", show_alert=True)
+
+async def h_km_cb_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    _, qid, idx_s = (q.data.split("|") + ["", "", ""])[:3]
+    st = _km_state(qid)
+    if not st:
+        await q.answer("hasil sudah basi — /km lagi", show_alert=True)
+        return
+    it = st["items"][int(idx_s or 1) - 1]
+    photos = [_clean_km_img(u) for u in (it.get("photos") or [])[:9]]
+    if not photos:
+        await q.answer("post ini gak ada foto", show_alert=True)
+        return
+    await q.answer(f"📷 ngirim {len(photos)} foto...")
+    media_group = []
+    cap = (f"🦊 <b>{esc(it['creator'])}</b> — {esc(it['title'][:100])}\n"
+           f"🗓 {esc(it['date'] or '-')}")
+    for i, u in enumerate(photos):
+        media_group.append(InputMediaPhoto(media=u,
+                                           caption=cap if i == 0 else "",
+                                           parse_mode=ParseMode.HTML if i == 0 else None))
+    try:
+        await _send_retry(lambda: context.bot.send_media_group(
+            chat_id=q.message.chat.id, media=media_group,
+            read_timeout=MEDIA_TIMEOUT, write_timeout=MEDIA_TIMEOUT))
+    except TelegramError as e:
+        log.warning("km album gagal: %s", e)
+        try:
+            await context.bot.send_message(chat_id=q.message.chat.id,
+                                           text=f"❌ album gagal: {esc(str(e)[:120])}",
+                                           parse_mode=ParseMode.HTML)
+        except TelegramError:
+            pass
+
+async def h_km_cb_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    _, qid, idx_s = (q.data.split("|") + ["", "", ""])[:3]
+    st = _km_state(qid)
+    if not st:
+        await q.answer("hasil sudah basi — /km lagi", show_alert=True)
+        return
+    it = st["items"][int(idx_s or 1) - 1]
+    vids = it.get("videos") or []
+    if not vids:
+        await q.answer("post ini gak ada video 😅", show_alert=True)
+        return
+    await q.answer("🎬 memproses video...")
+    cap = (f"🎬 <b>{esc(it['creator'])}</b> — {esc(it['title'][:100])}")
+    try:
+        await _send_retry(lambda: context.bot.send_video(
+            chat_id=q.message.chat.id, video=vids[0], caption=cap,
+            parse_mode=ParseMode.HTML, supports_streaming=True,
+            read_timeout=MEDIA_TIMEOUT, write_timeout=MEDIA_TIMEOUT))
+    except TelegramError as e:
+        log.warning("km video gagal: %s", e)
+        vid_url = vids[0]
+        post_url = it.get("url") or scraper_kemono.SITE
+        kb_fail = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🎬 Tonton / Download Video", url=vid_url)],
+            [InlineKeyboardButton("🌐 Buka Post di Web", url=post_url)]
+        ])
+        msg_fail = (
+            f"⚠️ <b>Video gak bisa dikirim langsung ke chat</b>\n\n"
+            f"👤 <b>{esc(it['creator'])}</b> · {esc(it.get('service', 'patreon'))}\n"
+            f"📝 {esc(it['title'][:100])}\n\n"
+            "💡 <b>Penyebab:</b> Telegram membatasi ukuran video lewat link (maks <b>20 MB</b>). "
+            "Video eksklusif ini ukurannya lebih dari 20 MB sehingga ditolak oleh Telegram.\n\n"
+            "👉 <b>Solusi:</b> Klik tombol di bawah untuk <b>langsung nonton / download</b> di browser:"
+        )
+        try:
+            await context.bot.send_message(chat_id=q.message.chat.id,
+                                           text=msg_fail,
+                                           parse_mode=ParseMode.HTML,
+                                           reply_markup=kb_fail)
+        except TelegramError:
+            pass
+
+# ── CHATURBATE LIVE CAM ────────────────────────────────────────────────────
+STATES_CAM: "OrderedDict[str, dict]" = OrderedDict()
+
+def new_cam_state(rooms: list, tag: str) -> str:
+    qid = uuid.uuid4().hex[:8]
+    STATES_CAM[qid] = {"rooms": rooms, "tag": tag, "t": time.time()}
+    STATES_CAM.move_to_end(qid)
+    while len(STATES_CAM) > 60 or (
+            len(STATES_CAM) > 1 and
+            time.time() - next(iter(STATES_CAM.values()))["t"] > 6 * 3600):
+        STATES_CAM.popitem(last=False)
+    return qid
+
+def _cam_state(qid: str) -> dict | None:
+    st = STATES_CAM.get(qid)
+    if st:
+        if time.time() - st["t"] > 6 * 3600:
+            STATES_CAM.pop(qid, None)
+            return None
+        STATES_CAM.move_to_end(qid)
+    return st
+
+def cam_kb(qid: str, idx: int, rm: dict, total: int) -> InlineKeyboardMarkup:
+    rows = [
+        [InlineKeyboardButton("🌐 Nonton Live Streaming", url=rm["url"])],
+    ]
+    nav = []
+    if idx > 1:
+        nav.append(InlineKeyboardButton("◀️", callback_data=f"cam|{qid}|{idx - 1}"))
+    nav.append(InlineKeyboardButton(f"{idx}/{total}", callback_data="noop"))
+    if idx < total:
+        nav.append(InlineKeyboardButton("▶️", callback_data=f"cam|{qid}|{idx + 1}"))
+    rows.append(nav)
+    rows.append([
+        InlineKeyboardButton("🎲 Acak Cewek Lain", callback_data="camrand"),
+        InlineKeyboardButton("🌸 Tag Populer", callback_data="camtags"),
+    ])
+    rows.append([
+        InlineKeyboardButton("🏠 Menu Utama", callback_data="menu|dewasa")
+    ])
+    return InlineKeyboardMarkup(rows)
+
+def cam_tags_kb() -> InlineKeyboardMarkup:
+    tags = ["asian", "teen", "milf", "latina", "squirt", "couple", "bbw", "feet"]
+    rows = []
+    r_cur = []
+    for t in tags:
+        r_cur.append(InlineKeyboardButton(f"#{t}", callback_data=f"camtag|{t}"))
+        if len(r_cur) == 4:
+            rows.append(r_cur)
+            r_cur = []
+    if r_cur:
+        rows.append(r_cur)
+    rows.append([InlineKeyboardButton("🎲 Semua / Acak", callback_data="camrand")])
+    return InlineKeyboardMarkup(rows)
+
+async def _render_cam_room(target_msg, context, qid: str, idx: int, edit: bool = True) -> bool:
+    st = _cam_state(qid)
+    if not st or not (1 <= idx <= len(st["rooms"])):
+        return False
+    rm = st["rooms"][idx - 1]
+    tag_lbl = st.get("tag") or "semua"
+    age_str = f" ({rm['age']} thn)" if rm.get("age") else ""
+    cap = (
+        f"🔴 <b>LIVE CAM</b> · <b>{esc(rm['username'])}</b>{age_str}\n"
+        f"👥 <b>{rm['viewers']:,}</b> penonton · 📍 {esc(rm.get('location') or 'Online')}\n"
+        f"💬 <i>{esc(rm['subject'][:130])}</i>\n"
+        f"🏷 <code>{esc(', '.join(rm['tags'][:5]))}</code>\n"
+        f"📡 #{esc(tag_lbl)} (room {idx}/{len(st['rooms'])})"
+    )
+    kb = cam_kb(qid, idx, rm, len(st["rooms"]))
+    img = rm.get("image")
+
+    if edit:
+        try:
+            if img:
+                await context.bot.edit_message_media(
+                    chat_id=target_msg.chat.id, message_id=target_msg.message_id,
+                    media=InputMediaPhoto(img, caption=cap, parse_mode=ParseMode.HTML),
+                    reply_markup=kb)
+                return True
+        except TelegramError as e:
+            log.info("edit cam gagal (%s) → fallback pesan baru", e)
+
+    try:
+        if img:
+            await target_msg.reply_photo(photo=img, caption=cap,
+                                         parse_mode=ParseMode.HTML, reply_markup=kb)
+        else:
+            await target_msg.reply_text(cap, parse_mode=ParseMode.HTML, reply_markup=kb)
+        return True
+    except TelegramError as e2:
+        log.warning("kirim cam baru gagal: %s", e2)
+        return False
+
+async def h_cam(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    args = list(context.args or [])
+    tag = " ".join(args).strip().lower()
+    if update.message and update.message.text and update.message.text.startswith("/camrand"):
+        tag = "acak"
+
+    lbl = esc(tag) if tag else "semua"
+    msg = await update.message.reply_text(f"📹 nyari cewek live <b>#{lbl}</b>...",
+                                          parse_mode=ParseMode.HTML)
+    try:
+        rooms = await asyncio.to_thread(scraper_cam.get_online_rooms, tag=tag, limit=40)
+    except Exception as e:
+        log.exception("cam fetch error")
+        await msg.edit_text(f"❌ {esc(str(e)[:160])}", parse_mode=ParseMode.HTML)
+        return
+
+    if not rooms:
+        await msg.edit_text(f"❌ gak ada cewek online utk tag <b>#{lbl}</b> — coba <code>/cam asian</code> atau <code>/cam teen</code>",
+                            parse_mode=ParseMode.HTML)
+        return
+
+    qid = new_cam_state(rooms, tag or "all")
+    ok = await _render_cam_room(msg, context, qid, 1, edit=False)
+    if ok:
+        try:
+            await msg.delete()
+        except TelegramError:
+            pass
+
+async def h_cam_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    data = q.data or ""
+    parts = data.split("|")
+    act = parts[0]
+
+    if act == "cam":
+        qid = parts[1] if len(parts) > 1 else ""
+        idx_s = parts[2] if len(parts) > 2 else "1"
+        st = _cam_state(qid)
+        if not st:
+            await q.answer("hasil sudah basi — /cam lagi", show_alert=True)
+            return
+        idx = int(idx_s or 1)
+        if not (1 <= idx <= len(st["rooms"])):
+            await q.answer("udah di ujung ✌️")
+            return
+        await q.answer()
+        await _render_cam_room(q.message, context, qid, idx, edit=True)
+
+    elif act == "camtags":
+        await q.answer()
+        txt = "🌸 <b>Pilih Kategori Tag Live Cam:</b>"
+        try:
+            await q.message.edit_caption(txt, parse_mode=ParseMode.HTML, reply_markup=cam_tags_kb())
+        except TelegramError:
+            await q.message.reply_text(txt, parse_mode=ParseMode.HTML, reply_markup=cam_tags_kb())
+
+    elif act == "camtag":
+        tag = parts[1] if len(parts) > 1 else "asian"
+        await q.answer(f"nyari #{tag}...")
+        try:
+            rooms = await asyncio.to_thread(scraper_cam.get_online_rooms, tag=tag, limit=40)
+            if not rooms:
+                await q.answer(f"tag #{tag} lagi sepi", show_alert=True)
+                return
+            qid = new_cam_state(rooms, tag)
+            await _render_cam_room(q.message, context, qid, 1, edit=True)
+        except Exception as e:
+            await q.answer(f"❌ {str(e)[:40]}", show_alert=True)
+
+    elif act == "camrand":
+        await q.answer("🎲 mengacak cewek live...")
+        try:
+            rooms = await asyncio.to_thread(scraper_cam.get_online_rooms, tag="", limit=50)
+            if not rooms:
+                await q.answer("gagal mengambil room", show_alert=True)
+                return
+            random.shuffle(rooms)
+            qid = new_cam_state(rooms, "acak")
+            await _render_cam_room(q.message, context, qid, 1, edit=True)
+        except Exception as e:
+            await q.answer(f"❌ {str(e)[:40]}", show_alert=True)
+
+# ── EROME AMATEUR ALBUMS ──────────────────────────────────────────────────
+STATES_EROME: "OrderedDict[str, dict]" = OrderedDict()
+
+def new_erome_state(items: list, label: str) -> str:
+    qid = uuid.uuid4().hex[:8]
+    STATES_EROME[qid] = {"items": items, "label": label, "t": time.time()}
+    STATES_EROME.move_to_end(qid)
+    while len(STATES_EROME) > 60 or (
+            len(STATES_EROME) > 1 and
+            time.time() - next(iter(STATES_EROME.values()))["t"] > 6 * 3600):
+        STATES_EROME.popitem(last=False)
+    return qid
+
+def _erome_state(qid: str) -> dict | None:
+    st = STATES_EROME.get(qid)
+    if st:
+        if time.time() - st["t"] > 6 * 3600:
+            STATES_EROME.pop(qid, None)
+            return None
+        STATES_EROME.move_to_end(qid)
+    return st
+
+def erome_kb(qid: str, idx: int, it: dict, total: int) -> InlineKeyboardMarkup:
+    rows = [
+        [InlineKeyboardButton("📷 Buka Isi Album (Foto & Video)", callback_data=f"eromea|{it['id']}")],
+    ]
+    nav = []
+    if idx > 1:
+        nav.append(InlineKeyboardButton("◀️", callback_data=f"erome|{qid}|{idx - 1}"))
+    nav.append(InlineKeyboardButton(f"{idx}/{total}", callback_data="noop"))
+    if idx < total:
+        nav.append(InlineKeyboardButton("▶️", callback_data=f"erome|{qid}|{idx + 1}"))
+    rows.append(nav)
+    rows.append([
+        InlineKeyboardButton("🎲 Album Acak", callback_data="eromerand"),
+        InlineKeyboardButton("🌐 Buka Web Asli", url=it.get("url") or scraper_erome.SITE),
+    ])
+    rows.append([
+        InlineKeyboardButton("🏠 Menu Utama", callback_data="menu|dewasa")
+    ])
+    return InlineKeyboardMarkup(rows)
+
+async def _render_erome_card(target_msg, context, qid: str, idx: int, edit: bool = True) -> bool:
+    st = _erome_state(qid)
+    if not st or not (1 <= idx <= len(st["items"])):
+        return False
+    it = st["items"][idx - 1]
+    lbl = st.get("label") or "explore"
+    cap = (
+        f"📸 <b>{esc(it['title'][:120])}</b>\n"
+        f"👤 Uploader: <b>{esc(it.get('user', 'Anon'))}</b> · 🆔 <code>{esc(it['id'])}</code>\n"
+        f"🎞 {esc(lbl)} (album {idx}/{len(st['items'])})"
+    )
+    kb = erome_kb(qid, idx, it, len(st["items"]))
+    thumb = it.get("thumb")
+
+    if edit:
+        try:
+            if thumb:
+                await context.bot.edit_message_media(
+                    chat_id=target_msg.chat.id, message_id=target_msg.message_id,
+                    media=InputMediaPhoto(thumb, caption=cap, parse_mode=ParseMode.HTML),
+                    reply_markup=kb)
+                return True
+        except TelegramError as e:
+            log.info("edit erome card gagal (%s) → fallback pesan baru", e)
+
+    try:
+        if thumb:
+            await target_msg.reply_photo(photo=thumb, caption=cap,
+                                         parse_mode=ParseMode.HTML, reply_markup=kb)
+        else:
+            await target_msg.reply_text(cap, parse_mode=ParseMode.HTML, reply_markup=kb)
+        return True
+    except TelegramError as e2:
+        log.warning("kirim erome card gagal: %s", e2)
+        return False
+
+async def h_erome(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    args = list(context.args or [])
+    if update.message and update.message.text and update.message.text.startswith("/eromerand"):
+        args = ["acak"]
+    q = " ".join(args).strip()
+
+    lbl = esc(q[:30]) if q else "explore"
+    msg = await update.message.reply_text(f"📸 nyari album Erome <b>{lbl}</b>...",
+                                          parse_mode=ParseMode.HTML)
+    try:
+        items, resolved_label = await asyncio.to_thread(scraper_erome.resolve, q)
+    except Exception as e:
+        log.exception("erome resolve gagal")
+        await msg.edit_text(f"❌ {esc(str(e)[:160])}", parse_mode=ParseMode.HTML)
+        return
+
+    if not items:
+        await msg.edit_text(f"❌ gak ketemu album utk <b>{lbl}</b>",
+                            parse_mode=ParseMode.HTML)
+        return
+
+    qid = new_erome_state(items, resolved_label)
+    ok = await _render_erome_card(msg, context, qid, 1, edit=False)
+    if ok:
+        try:
+            await msg.delete()
+        except TelegramError:
+            pass
+
+async def h_erome_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    data = q.data or ""
+    parts = data.split("|")
+    act = parts[0]
+
+    if act == "erome":
+        qid = parts[1] if len(parts) > 1 else ""
+        idx_s = parts[2] if len(parts) > 2 else "1"
+        st = _erome_state(qid)
+        if not st:
+            await q.answer("hasil sudah basi — /erome lagi", show_alert=True)
+            return
+        idx = int(idx_s or 1)
+        if not (1 <= idx <= len(st["items"])):
+            await q.answer("udah di ujung ✌️")
+            return
+        await q.answer()
+        await _render_erome_card(q.message, context, qid, idx, edit=True)
+
+    elif act == "eromerand":
+        await q.answer("🎲 mengacak album...")
+        try:
+            items, lbl = await asyncio.to_thread(scraper_erome.resolve, "acak")
+            if not items:
+                await q.answer("gagal acak album", show_alert=True)
+                return
+            qid = new_erome_state(items, lbl)
+            await _render_erome_card(q.message, context, qid, 1, edit=True)
+        except Exception as e:
+            await q.answer(f"❌ {str(e)[:40]}", show_alert=True)
+
+async def h_erome_album_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    parts = q.data.split("|")
+    aid = parts[1] if len(parts) > 1 else ""
+    await q.answer("📥 membuka isi album...")
+    try:
+        det = await asyncio.to_thread(scraper_erome.get_album_detail, aid)
+        if not det:
+            await q.answer("gagal membuka detail album", show_alert=True)
+            return
+        photos = (det.get("photos") or [])[:9]
+        videos = det.get("videos") or []
+
+        if not photos and not videos:
+            await q.answer("album ini kosong / media tidak ditemukan", show_alert=True)
+            return
+
+        cap = (
+            f"📸 <b>{esc(det['title'][:100])}</b>\n"
+            f"👤 {esc(det['user'])} · 📷 {len(det.get('photos') or [])} foto"
+            f" · 🎬 {len(videos)} video\n"
+            f"🌐 <a href=\"{det['url']}\">buka album di web</a>"
+        )
+
+        if len(photos) == 1:
+            try:
+                await _send_retry(lambda: context.bot.send_photo(
+                    chat_id=q.message.chat.id, photo=photos[0], caption=cap,
+                    parse_mode=ParseMode.HTML,
+                    read_timeout=MEDIA_TIMEOUT, write_timeout=MEDIA_TIMEOUT))
+            except TelegramError as e:
+                log.warning("erome send single photo gagal: %s", e)
+                await context.bot.send_message(chat_id=q.message.chat.id,
+                                               text=f"⚠️ {cap}", parse_mode=ParseMode.HTML)
+        elif len(photos) > 1:
+            media_group = []
+            for i, u in enumerate(photos):
+                media_group.append(InputMediaPhoto(media=u,
+                                                   caption=cap if i == 0 else "",
+                                                   parse_mode=ParseMode.HTML if i == 0 else None))
+            try:
+                await _send_retry(lambda: context.bot.send_media_group(
+                    chat_id=q.message.chat.id, media=media_group,
+                    read_timeout=MEDIA_TIMEOUT, write_timeout=MEDIA_TIMEOUT))
+            except TelegramError as e:
+                log.warning("erome send media group gagal: %s", e)
+                await context.bot.send_message(chat_id=q.message.chat.id,
+                                               text=f"⚠️ {cap}", parse_mode=ParseMode.HTML)
+        else:
+            await context.bot.send_message(chat_id=q.message.chat.id,
+                                           text=cap, parse_mode=ParseMode.HTML)
+
+        for v in videos[:2]:
+            try:
+                await _send_retry(lambda: context.bot.send_video(
+                    chat_id=q.message.chat.id, video=v,
+                    caption=f"🎬 {esc(det['title'][:80])}",
+                    parse_mode=ParseMode.HTML, supports_streaming=True,
+                    read_timeout=MEDIA_TIMEOUT, write_timeout=MEDIA_TIMEOUT))
+            except TelegramError:
+                kb_v = InlineKeyboardMarkup([[InlineKeyboardButton("🎬 Tonton Video di Browser", url=v)]])
+                await context.bot.send_message(chat_id=q.message.chat.id,
+                                               text=f"🎬 <b>Video ({esc(det['title'][:50])})</b> via link:",
+                                               parse_mode=ParseMode.HTML,
+                                               reply_markup=kb_v)
+    except Exception as e:
+        log.exception("erome album callback error: %s", e)
+        await q.answer(f"❌ {str(e)[:40]}", show_alert=True)
+
+
 def build_app() -> Application:
     """Susun Application + semua handler. Dipisah dari main() supaya test
     harness bisa validasi registrasi command SEBELUM bot jalan."""
@@ -4895,6 +6332,31 @@ def build_app() -> Application:
     app.add_handler(CallbackQueryHandler(h_jav_cb, pattern=r"^jv[a-z]*\|"))
     app.add_handler(CommandHandler("r34", h_r34))
     app.add_handler(CallbackQueryHandler(h_r34_cb, pattern=r"^r34r\|"))
+    # 🔥 lendir pack: NHentai 6-digit / OnlyFans leak / RedGIFs
+    app.add_handler(CommandHandler(["nh", "nhentai"], h_nh))
+    app.add_handler(CallbackQueryHandler(h_nh_pop_cb, pattern=r"^nhpop$"))
+    app.add_handler(CommandHandler(["of", "onlyfans", "ofrand"], h_of))
+    app.add_handler(CommandHandler(["rg", "redgifs"], h_rg))
+    app.add_handler(CommandHandler(["rgtag", "rgtags"], h_rgtag))
+
+    # 🔥 lendir pack: Kemono / Chaturbate / Erome
+    app.add_handler(CommandHandler(["km", "kemono", "kmrand"], h_km))
+    app.add_handler(CallbackQueryHandler(h_km_nav_cb, pattern=r"^(kmnav|kmtop|kmc|kmrand)\|"))
+    app.add_handler(CallbackQueryHandler(h_km_cb, pattern=r"^km\|"))
+    app.add_handler(CallbackQueryHandler(h_km_cb_photo, pattern=r"^kmp\|"))
+    app.add_handler(CallbackQueryHandler(h_km_cb_video, pattern=r"^kmv\|"))
+
+    app.add_handler(CommandHandler(["cam", "chaturbate", "camrand"], h_cam))
+    app.add_handler(CallbackQueryHandler(h_cam_cb, pattern=r"^(cam|camtag|camrand|camtags)\|?"))
+
+    app.add_handler(CommandHandler(["erome", "eromerand"], h_erome))
+    app.add_handler(CallbackQueryHandler(h_erome_album_cb, pattern=r"^eromea\|"))
+    app.add_handler(CallbackQueryHandler(h_erome_cb, pattern=r"^(erome\||eromerand)"))
+    app.add_handler(CallbackQueryHandler(h_of_nav_cb, pattern=r"^(ofnav|oftop|ofc|ofrand)\|"))
+    app.add_handler(CallbackQueryHandler(h_of_cb, pattern=r"^of\|"))
+    app.add_handler(CallbackQueryHandler(h_of_cb_photo, pattern=r"^ofp\|"))
+    app.add_handler(CallbackQueryHandler(h_of_cb_video, pattern=r"^ofv\|"))
+    app.add_handler(CallbackQueryHandler(h_rg_cb, pattern=r"^rgl\|"))
     app.add_handler(CallbackQueryHandler(h_koleksi_cb, pattern=r"^(kh|kdl)\|"))
     app.add_handler(CallbackQueryHandler(h_acak_cb, pattern=r"^acak_lagi\|"))
     app.add_handler(CallbackQueryHandler(h_aiv_cb, pattern=r"^aiv\|"))
